@@ -5,67 +5,23 @@ import (
 
 	"context"
 	"flag"
-	"fmt"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/deepakjacob/digester/db"
+	"github.com/deepakjacob/digester/domain"
+	"github.com/deepakjacob/digester/service"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
-
-const (
-	hostname     = "localhost"
-	host_port    = 5432
-	username     = "postgres"
-	password     = "postgres"
-	databasename = "digester"
-)
-
-var db *pgxpool.Pool
-
-func setupDbConnection() {
-
-	pgConnString := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		hostname, host_port, username, password, databasename)
-	poolConfig, err := pgxpool.ParseConfig(pgConnString)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Unable to parse DATABASE_URL")
-		os.Exit(1)
-	}
-
-	db, err = pgxpool.ConnectConfig(context.Background(), poolConfig)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Unable to create connection pool")
-		os.Exit(1)
-	}
-}
-
-func getFile() error {
-	rows, _ := db.Query(context.Background(), "select file_id, file_name from file_register")
-
-	for rows.Next() {
-		var id int32
-		var name string
-		err := rows.Scan(&id, &name)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%d. %s\n", id, name)
-	}
-
-	return rows.Err()
-}
 
 func main() {
 	// UNIX Time is faster and smaller than most timestamps
 	// If you set zerolog.TimeFieldFormat to an empty string,
 	// logs will write with UNIX time
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 	debug := flag.Bool("debug", true, "sets log level to debug")
 	flag.Parse()
 
@@ -98,9 +54,6 @@ func main() {
 	//TODO: implement graceful shutdown for server
 	// go-chi reccomends following method:
 	// github.com/go-chi/chi/blob/master/_examples/graceful/main.go
-
-	setupDbConnection()
-	getFile()
 
 	log.Info().Msg("Server is ready to service requests.")
 	http.ListenAndServe(":3333", r)
@@ -136,8 +89,23 @@ func AuthenticatedOnly(next http.Handler) http.Handler {
 
 func getStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello this is /getStatus"))
+	w.Write([]byte("Hello this is /postFile"))
+	conn := db.New(context.Background())
+	db := &db.RegistrationDBImpl{
+		PgConn: conn,
+	}
+
+	service := &service.RegistrationServiceImpl{
+		RegistrationDB: db,
+	}
+	o := &domain.Registration{
+		FileID:   "001",
+		FileName: "Sample File",
+	}
+	service.RegisterFile(context.Background(), o)
 }
 
 func postFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello this is /postFile"))
+
 }
