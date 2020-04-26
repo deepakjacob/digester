@@ -14,10 +14,26 @@
     - SELECT current_database();
     - \c
     - Select * from current_catalog;
-
+     
 *** Create database
 
     - SELECT 'CREATE DATABASE digester' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'digester')\gexec
 
       
 
+*** Change connection password
+
+    - ALTER USER postgres PASSWORD 'postgres';
+
+*** Table Creation
+
+    - create table file_register(
+      file_id serial primary key,
+      file_name text,
+      file_data bytea,
+      file_date timestamp with time zone,
+      tower text,
+      location text,
+      postalcode text,
+      areacode text
+    ) 
