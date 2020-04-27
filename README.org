@@ -38,5 +38,4 @@
 
 *** Curl Commands for testing
 
-    - Registration
-        curl -d "file_name=file001&tower_id=tower_001&location_id=location_001&postal_code=567890&area_code=080" -H "Content-Type: application/x-www-form-urlencoded" -X POST http://localhost:3333/digest/post       
+    curl -d "file_name=file001&tower_id=tower_001&location_id=location_001&postal_code=567890&area_code=080" -H "Content-Type: application/x-www-form-urlencoded" -X POST http://localhost:3333/digest/post       
