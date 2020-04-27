@@ -3,14 +3,34 @@ package main
 import (
 	//...
 
+	"context"
+	"flag"
 	"net/http"
 	"time"
 
+	"github.com/deepakjacob/digester/db"
+	"github.com/deepakjacob/digester/handler"
+	"github.com/deepakjacob/digester/service"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	// UNIX Time is faster and smaller than most timestamps
+	// If you set zerolog.TimeFieldFormat to an empty string,
+	// logs will write with UNIX time
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	debug := flag.Bool("debug", true, "sets log level to debug")
+	flag.Parse()
+
+	// Default level for this example is info, unless debug flag is present
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	r := chi.NewRouter()
 
 	// A good base middleware stack
@@ -28,23 +48,30 @@ func main() {
 		w.Write([]byte("Welcome to digester"))
 	})
 
+	conn := db.New(context.Background())
+	regDB := &db.RegistrationDBImpl{conn}
+	regService := &service.RegistrationServiceImpl{regDB}
+	regHandler := handler.RegistrationHandler{regService}
+
 	// Mount the digest sub-router
-	r.Mount("/digest", digesterRouter())
+	r.Mount("/digest", digesterRouter(regHandler))
 
 	//TODO: implement graceful shutdown for server
 	// go-chi reccomends following method:
 	// github.com/go-chi/chi/blob/master/_examples/graceful/main.go
+
+	log.Info().Msg("Server is ready to service requests.")
 	http.ListenAndServe(":3333", r)
 }
 
 // A completely separate router for administrator routes
-func digesterRouter() http.Handler {
+func digesterRouter(regHandler handler.RegistrationHandler) http.Handler {
 	r := chi.NewRouter()
 	// TODO: currently only basic auth with hardcoded username / password
 	// TODO: change to stronger methods / implementations
 	r.Use(AuthenticatedOnly)
 	r.Get("/status", getStatus)
-	r.Post("/post", postFile)
+	r.Post("/post", regHandler.Registration)
 	return r
 }
 
@@ -67,8 +94,5 @@ func AuthenticatedOnly(next http.Handler) http.Handler {
 
 func getStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello this is /getStatus"))
-}
 
-func postFile(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello this is /postFile"))
 }
