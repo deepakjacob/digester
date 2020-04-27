@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 // Registration captures a file registration.
 // Please note that we are not capturing / persisting file contents
 
@@ -8,7 +10,7 @@ type FileIDType string
 type Registration struct {
 	FileID     FileIDType
 	FileName   string
-	FileDate   string
+	FileDate   time.Time
 	TowerID    string
 	LocationID string
 	PostalCode string

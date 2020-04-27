@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/deepakjacob/digester/db"
-	"github.com/deepakjacob/digester/domain"
+	"github.com/deepakjacob/digester/handler"
 	"github.com/deepakjacob/digester/service"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -48,8 +48,13 @@ func main() {
 		w.Write([]byte("Welcome to digester"))
 	})
 
+	conn := db.New(context.Background())
+	regDB := &db.RegistrationDBImpl{conn}
+	regService := &service.RegistrationServiceImpl{regDB}
+	regHandler := handler.RegistrationHandler{regService}
+
 	// Mount the digest sub-router
-	r.Mount("/digest", digesterRouter())
+	r.Mount("/digest", digesterRouter(regHandler))
 
 	//TODO: implement graceful shutdown for server
 	// go-chi reccomends following method:
@@ -60,13 +65,13 @@ func main() {
 }
 
 // A completely separate router for administrator routes
-func digesterRouter() http.Handler {
+func digesterRouter(regHandler handler.RegistrationHandler) http.Handler {
 	r := chi.NewRouter()
 	// TODO: currently only basic auth with hardcoded username / password
 	// TODO: change to stronger methods / implementations
 	r.Use(AuthenticatedOnly)
 	r.Get("/status", getStatus)
-	r.Post("/post", postFile)
+	r.Post("/post", regHandler.Registration)
 	return r
 }
 
@@ -89,23 +94,5 @@ func AuthenticatedOnly(next http.Handler) http.Handler {
 
 func getStatus(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello this is /getStatus"))
-	w.Write([]byte("Hello this is /postFile"))
-	conn := db.New(context.Background())
-	db := &db.RegistrationDBImpl{
-		PgConn: conn,
-	}
-
-	service := &service.RegistrationServiceImpl{
-		RegistrationDB: db,
-	}
-	o := &domain.Registration{
-		FileID:   "001",
-		FileName: "Sample File",
-	}
-	service.RegisterFile(context.Background(), o)
-}
-
-func postFile(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello this is /postFile"))
 
 }

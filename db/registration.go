@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/deepakjacob/digester/domain"
 )
@@ -16,16 +15,15 @@ type RegistrationDBImpl struct {
 }
 
 func (r *RegistrationDBImpl) RegisterFile(ctx context.Context, o *domain.Registration) (domain.FileIDType, error) {
-	rows, _ := r.db.Query(ctx,
-		"select file_id, file_name from file_register")
-	for rows.Next() {
-		var id int32
-		var name string
-		err := rows.Scan(&id, &name)
-		if err != nil {
-			return "", err
-		}
-		fmt.Printf("%d. %s\n", id, name)
+	_, err := r.db.Exec(ctx,
+		"insert into FILE_REGISTER "+
+			"(file_name, file_date, tower_id, location_id, postal_code, area_code)"+
+			" values "+
+			"($1, $2, $3, $4, $5, $6)",
+		o.FileName, o.FileDate, o.TowerID, o.LocationID, o.PostalCode, o.AreaCode,
+	)
+	if err != nil {
+		return "", err
 	}
-	return "", rows.Err()
+	return "1234", nil
 }
