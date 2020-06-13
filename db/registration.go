@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/deepakjacob/digester/domain"
 )
 
@@ -15,7 +17,13 @@ type RegistrationDBImpl struct {
 }
 
 func (r *RegistrationDBImpl) RegisterFile(ctx context.Context, o *domain.Registration) (domain.FileIDType, error) {
-	_, err := r.db.Exec(ctx,
+	conn, err := r.db.Acquire(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("error acquire db connection from pool")
+		return "", err
+	}
+	defer conn.Release()
+	_, err = conn.Exec(ctx,
 		"insert into FILE_REGISTER "+
 			"(file_name, file_date, tower_id, location_id, postal_code, area_code)"+
 			" values "+
