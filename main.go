@@ -48,8 +48,8 @@ func main() {
 		w.Write([]byte("Welcome to digester"))
 	})
 
-	conn := db.New(context.Background())
-	regDB := &db.RegistrationDBImpl{conn}
+	pool := db.New(context.Background())
+	regDB := &db.RegistrationDBImpl{pool}
 	regService := &service.RegistrationServiceImpl{regDB}
 	regHandler := handler.RegistrationHandler{regService}
 
