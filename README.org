@@ -3,10 +3,10 @@
 *** Docker Setup
 
     - docker pull postgres
-    - docker run --rm   --name pg-docker -e POSTGRES_PASSWORD=docker -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data  postgres
+    - docker run --name pg-docker -e POSTGRES_PASSWORD=docker -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data  postgres
 
 *** Connect to db
-
+    # make sure to create database first
     - psql -h localhost -U postgres -d digester
  
 *** Get the current database 
@@ -30,10 +30,10 @@
       file_id serial primary key,
       file_name text,
       file_date timestamp with time zone,
-      tower text,
-      location text,
-      postalcode text,
-      areacode text
+      tower_id text,
+      location_id text,
+      postal_code text,
+      area_code text
     ) 
 
 *** Curl Commands for testing
